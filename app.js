@@ -62,10 +62,7 @@ function renderIdentity() {
   $('.hero-role').textContent = profile.role;
   const technologies = $('.hero-technologies');
   technologies.replaceChildren();
-  profile.skillsLine.forEach((skill, index) => {
-    if (index) technologies.append(element('span', '', '·'));
-    technologies.append(document.createTextNode(skill));
-  });
+  profile.skillsLine.forEach((skill) => technologies.append(element('li', '', skill)));
   document.title = `${profile.name} — ${profile.role}`;
 }
 
@@ -237,4 +234,3 @@ setupReveal();
 setupContact();
 const year = $('#year');
 if (year) year.textContent = new Date().getFullYear();
-$('#print-resume')?.addEventListener('click', () => window.print());
