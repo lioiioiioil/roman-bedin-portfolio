@@ -1,6 +1,6 @@
-import { profile } from './src/content.js';
-import { projectArt } from './src/visuals.js';
-import { setupProjectMotion } from './src/project-motion.js';
+import { profile } from './src/content.js?v=projects-motion-2';
+import { projectArt } from './src/visuals.js?v=projects-motion-2';
+import { setupProjectMotion } from './src/project-motion.js?v=projects-motion-2';
 
 const $ = (selector) => document.querySelector(selector);
 const CONTACT_PLACEHOLDER = '[вот тут мои данные]';
