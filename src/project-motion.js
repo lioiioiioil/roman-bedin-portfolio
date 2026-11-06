@@ -45,11 +45,12 @@ export function setupProjectMotion() {
       }
     }
 
+    // WebKit resumes every SVG when a tab becomes visible; restore inactive pauses.
+    projects.forEach((project) => {
+      if (project !== next) project.svg.pauseAnimations();
+    });
     if (next === active) return;
-    if (active) {
-      active.svg.pauseAnimations();
-      active.card.classList.remove('is-animating');
-    }
+    if (active) active.card.classList.remove('is-animating');
     active = next;
     if (active) {
       active.svg.unpauseAnimations();
