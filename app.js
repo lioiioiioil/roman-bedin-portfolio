@@ -1,5 +1,6 @@
 import { profile } from './src/content.js';
 import { projectArt } from './src/visuals.js';
+import { setupProjectMotion } from './src/project-motion.js';
 
 const $ = (selector) => document.querySelector(selector);
 const CONTACT_PLACEHOLDER = '[вот тут мои данные]';
@@ -229,6 +230,8 @@ renderAbout();
 renderExpertise();
 renderExperience();
 renderProjects();
+setupProjectMotion();
+
 setupNavigation();
 setupReveal();
 setupContact();
