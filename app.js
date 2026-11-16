@@ -1,6 +1,6 @@
-import { profile } from './src/content.js?v=projects-motion-3';
-import { projectArt } from './src/visuals.js?v=projects-motion-3';
-import { setupProjectMotion } from './src/project-motion.js?v=projects-motion-3';
+import { profile } from './src/content.js?v=unslop-2';
+import { projectArt } from './src/visuals.js?v=unslop-2';
+import { setupProjectMotion } from './src/project-motion.js?v=unslop-2';
 
 const $ = (selector) => document.querySelector(selector);
 const CONTACT_PLACEHOLDER = '[вот тут мои данные]';
@@ -56,17 +56,6 @@ function renderSocials() {
   });
 }
 
-function renderIdentity() {
-  const title = $('#hero-title');
-  if (!title) return;
-  title.replaceChildren(document.createTextNode(profile.name), element('span', 'hero-dot', '.'));
-  $('.hero-role').textContent = profile.role;
-  const technologies = $('.hero-technologies');
-  technologies.replaceChildren();
-  profile.skillsLine.forEach((skill) => technologies.append(element('li', '', skill)));
-  document.title = `${profile.name} — ${profile.role}`;
-}
-
 function renderAbout() {
   const copy = $('#about-copy');
   if (!copy) return;
@@ -77,12 +66,10 @@ function renderExpertise() {
   const list = $('#expertise-list');
   if (!list) return;
   profile.expertise.forEach((item) => {
-    const article = element('article', 'expertise-item reveal');
-    const title = element('div', 'expertise-name');
-    title.append(element('span', 'expertise-number', item.number), element('h3', '', item.title));
+    const article = element('article', 'expertise-item');
     const body = element('div', 'expertise-body');
     body.append(element('p', '', item.description), tags(item.tags));
-    article.append(title, body);
+    article.append(element('h3', '', item.title), body);
     list.append(article);
   });
 }
@@ -91,7 +78,7 @@ function renderExperience() {
   const list = $('#experience-list');
   if (!list) return;
   profile.experience.forEach((item) => {
-    const article = element('article', 'experience-item reveal');
+    const article = element('article', 'experience-item');
     const top = element('div', 'experience-top');
     top.append(element('h3', '', item.organization), element('span', 'experience-year', item.year));
     article.append(top, element('p', 'experience-role', item.role));
@@ -106,20 +93,24 @@ function renderProjects() {
   const grid = $('#project-grid');
   if (!grid) return;
   profile.projects.forEach((project, index) => {
-    const link = externalLink(project.url, `project-card project-${project.visual} reveal`);
+    const link = externalLink(project.url, `project-card project-${project.visual}`);
+    if (index === 0) link.classList.add('project-featured');
     const visual = element('div', 'project-art');
     visual.setAttribute('aria-hidden', 'true');
     // The illustrations are local, fixed SVGs; profile text is always inserted as text.
     const template = document.createElement('template');
     template.innerHTML = projectArt[project.visual];
     visual.append(template.content.cloneNode(true));
-    const visualMeta = element('div', 'project-art-meta');
-    visualMeta.append(element('span', '', `0${index + 1}`), element('span', '', project.tags[0]));
-    visual.append(visualMeta);
     const body = element('div', 'project-body');
-    const heading = element('div', 'project-heading');
-    heading.append(element('h3', '', project.name), icon('arrow'));
-    body.append(element('p', 'project-kind', project.kind), heading, element('p', 'project-description', project.description), tags(project.tags));
+    const projectLink = element('span', 'project-link', 'Код на GitHub');
+    projectLink.append(icon('arrow'));
+    body.append(
+      element('p', 'project-kind', project.kind),
+      element('h3', 'project-heading', project.name),
+      element('p', 'project-description', project.description),
+      tags(project.tags),
+      projectLink,
+    );
     link.append(visual, body);
     grid.append(link);
   });
@@ -129,55 +120,64 @@ function setupNavigation() {
   const toggle = $('.menu-toggle');
   const nav = $('#site-nav');
   if (!toggle || !nav) return;
-  function closeMenu() {
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-label', 'Открыть меню');
-    nav.classList.remove('is-open');
-  }
-  toggle.addEventListener('click', () => {
-    const open = toggle.getAttribute('aria-expanded') !== 'true';
+  const menuIsOpen = () => toggle.getAttribute('aria-expanded') === 'true';
+
+  function setMenu(open) {
     toggle.setAttribute('aria-expanded', String(open));
     toggle.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
     nav.classList.toggle('is-open', open);
+  }
+
+  toggle.addEventListener('click', () => setMenu(!menuIsOpen()));
+  nav.addEventListener('click', (event) => {
+    if (menuIsOpen() && event.target.closest('a')) setMenu(false);
   });
-  nav.addEventListener('click', (event) => { if (event.target.closest('a')) closeMenu(); });
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeMenu(); });
-  document.addEventListener('click', (event) => { if (!event.target.closest('.header-inner')) closeMenu(); });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !menuIsOpen()) return;
+    setMenu(false);
+    toggle.focus({ preventScroll: true });
+    event.preventDefault();
+  });
+  document.addEventListener('click', (event) => {
+    if (menuIsOpen() && !event.target.closest('.header-inner')) setMenu(false);
+  });
+  window.matchMedia('(max-width: 700px)').addEventListener('change', () => setMenu(false));
 
   const header = $('.site-header');
-  const updateHeader = () => header.classList.toggle('is-scrolled', window.scrollY > 32);
-  window.addEventListener('scroll', updateHeader, { passive: true });
-  updateHeader();
-
-  if (!('IntersectionObserver' in window)) return;
   const links = [...nav.querySelectorAll('a')];
-  const sections = document.querySelectorAll('main > section[id]:not(#home)');
-  const activeObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (!entry.isIntersecting) return;
-      links.forEach((link) => {
-        if (link.hash === `#${entry.target.id}`) link.setAttribute('aria-current', 'location');
-        else link.removeAttribute('aria-current');
-      });
-    });
-  }, { rootMargin: '-20% 0px -55% 0px' });
-  sections.forEach((section) => activeObserver.observe(section));
-}
+  const sections = [...document.querySelectorAll('main > section[id]')];
+  if (!sections.length) return;
+  let frame = null;
 
-function setupReveal() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { threshold: 0.08 });
-  document.querySelectorAll('.reveal').forEach((item) => {
-    item.classList.add('will-reveal');
-    observer.observe(item);
-  });
+  function updateCurrentSection() {
+    frame = null;
+    header?.classList.toggle('is-scrolled', window.scrollY > 32);
+    const referenceY = (header?.getBoundingClientRect().bottom ?? 0) + 32;
+    let current = sections[0];
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top > referenceY) break;
+      current = section;
+    }
+
+    const scrollLimit = document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollLimit > 0 && window.scrollY >= scrollLimit - 2) {
+      current = sections[sections.length - 1];
+    }
+
+    for (const link of links) {
+      if (link.hash === `#${current.id}`) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    }
+  }
+
+  function scheduleCurrentSection() {
+    if (frame === null) frame = window.requestAnimationFrame(updateCurrentSection);
+  }
+
+  window.addEventListener('scroll', scheduleCurrentSection, { passive: true });
+  window.addEventListener('resize', scheduleCurrentSection);
+  window.addEventListener('hashchange', scheduleCurrentSection);
+  updateCurrentSection();
 }
 
 function setupContact() {
@@ -224,7 +224,6 @@ function setupContact() {
   });
 }
 
-renderIdentity();
 renderSocials();
 renderAbout();
 renderExpertise();
@@ -233,7 +232,6 @@ renderProjects();
 setupProjectMotion();
 
 setupNavigation();
-setupReveal();
 setupContact();
 const year = $('#year');
 if (year) year.textContent = new Date().getFullYear();

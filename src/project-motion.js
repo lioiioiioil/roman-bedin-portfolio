@@ -3,17 +3,25 @@ export function setupProjectMotion() {
     card,
     art: card.querySelector('.project-art'),
     svg: card.querySelector('.project-art > svg'),
-  })).filter(({ svg }) => typeof svg?.pauseAnimations === 'function');
+  })).filter(({ svg }) => typeof svg?.pauseAnimations === 'function'
+    && typeof svg.unpauseAnimations === 'function');
   if (!projects.length) return;
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const hoverLayout = window.matchMedia('(min-width: 701px) and (hover: hover) and (pointer: fine)');
+  const hoverLayout = window.matchMedia('(min-width: 761px) and (hover: hover) and (pointer: fine)');
   const header = document.querySelector('.site-header');
   let active = null;
   let frame = null;
 
+  function resetClock(svg) {
+    if (typeof svg.setCurrentTime === 'function') svg.setCurrentTime(0);
+  }
+
   // Each illustration has its own SVG clock, including motion paths and status changes.
-  projects.forEach(({ svg }) => svg.pauseAnimations());
+  projects.forEach(({ svg }) => {
+    svg.pauseAnimations();
+    resetClock(svg);
+  });
 
   function update() {
     frame = null;
@@ -35,8 +43,8 @@ export function setupProjectMotion() {
       } else {
         let nearest = Infinity;
         for (const project of visibleProjects) {
-          const card = project.card.getBoundingClientRect();
-          const distance = Math.abs(card.top + card.height / 2 - center);
+          const bounds = project.art.getBoundingClientRect();
+          const distance = Math.abs(bounds.top + bounds.height / 2 - center);
           if (distance < nearest) {
             nearest = distance;
             next = project;
@@ -50,9 +58,13 @@ export function setupProjectMotion() {
       if (project !== next) project.svg.pauseAnimations();
     });
     if (next === active) return;
-    if (active) active.card.classList.remove('is-animating');
+    if (active) {
+      resetClock(active.svg);
+      active.card.classList.remove('is-animating');
+    }
     active = next;
     if (active) {
+      resetClock(active.svg);
       active.svg.unpauseAnimations();
       active.card.classList.add('is-animating');
     }
